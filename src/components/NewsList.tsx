@@ -2,18 +2,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import StoryCard, { Story } from './StoryCard';
-import BentoGrid from './BentoGrid';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import axios from 'axios';
-import { Loader2, Grid2x2, Grid3x3 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const STORIES_PER_PAGE = 10;
-
-type ViewMode = 'list' | 'bento';
 
 const fetchTopStoryIds = async () => {
   const response = await axios.get('https://hacker-news.firebaseio.com/v0/topstories.json');
@@ -28,9 +25,9 @@ const fetchStory = async (id: number): Promise<Story> => {
 const NewsList = () => {
   const [page, setPage] = useState(1);
   const [stories, setStories] = useState<Story[]>([]);
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const containerRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
   
   const { data: storyIds, isLoading: isLoadingIds, error: idsError } = useQuery({
     queryKey: ['topStoryIds'],
@@ -72,45 +69,145 @@ const NewsList = () => {
     setPage((prevPage) => prevPage + 1);
   };
   
-  // Set up ScrollTrigger animations
+  // Enhanced ScrollTrigger animations for list view with viewport-based reveal
   useEffect(() => {
-    if (!containerRef.current || viewMode !== 'list') return;
+    if (!containerRef.current) return;
     
     // Clear any existing ScrollTrigger instances
     ScrollTrigger.getAll().forEach(trigger => trigger.kill());
     
-    // Animate the container itself
-    gsap.fromTo(
-      '.stories-container',
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }
-    );
+    // First, make the section visible but with initial transform
+    if (sectionRef.current) {
+      gsap.set(sectionRef.current, { 
+        opacity: 1, 
+        y: 0 
+      });
+    }
     
-    // Create stagger effect for story cards
+    // Create smooth scroll-driven animations for story cards
     const storyCards = containerRef.current.querySelectorAll('.story-card');
+    
+    // Hide all cards initially
+    gsap.set(storyCards, { 
+      opacity: 0, 
+      y: 50,
+      scale: 0.95
+    });
+    
+    // Create individual scroll triggers for each card with viewport-based reveal
     storyCards.forEach((card, index) => {
-      gsap.set(card, { opacity: 0, y: 50 });
-      
+      // Only show cards when they enter the viewport
       ScrollTrigger.create({
         trigger: card,
-        start: 'top bottom-=100',
+        start: 'top bottom-=20', // Start animation when card is about to enter viewport
+        end: 'bottom top+=20', // End animation when card leaves viewport
+        toggleActions: 'play none none reverse', // Play when enters, reverse when leaves
         onEnter: () => {
+          // Animate card when it enters viewport
           gsap.to(card, {
             opacity: 1,
             y: 0,
-            duration: 0.8,
-            delay: Math.min(index * 0.1, 0.5),
-            ease: 'power3.out'
+            scale: 1,
+            duration: 0.6,
+            ease: 'back.out(1.2)',
+            clearProps: 'scale' // Clear scale after animation to prevent conflicts
           });
         },
-        once: false
+        onLeave: () => {
+          // Hide card when it leaves viewport (optional, remove if you want cards to stay visible)
+          gsap.to(card, {
+            opacity: 0,
+            y: -30,
+            duration: 0.3,
+            ease: 'power1.in'
+          });
+        },
+        onEnterBack: () => {
+          // Show card again when scrolling back up
+          gsap.to(card, {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.6,
+            ease: 'back.out(1.2)',
+            clearProps: 'scale'
+          });
+        },
+        onLeaveBack: () => {
+          // Hide card when scrolling back up and it leaves viewport
+          gsap.to(card, {
+            opacity: 0,
+            y: 50,
+            scale: 0.95,
+            duration: 0.3,
+            ease: 'power1.in'
+          });
+        }
+      });
+      
+      // Add hover effect for each card
+      card.addEventListener('mouseenter', () => {
+        gsap.to(card, {
+          y: -5,
+          scale: 1.02,
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        gsap.to(card, {
+          y: 0,
+          scale: 1,
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+          duration: 0.3,
+          ease: 'power2.out'
+        });
       });
     });
+
+    // Add scroll animation for section title with parallax
+    if (sectionRef.current) {
+      const title = sectionRef.current.querySelector('h2');
+      if (title) {
+        ScrollTrigger.create({
+          trigger: sectionRef.current,
+          start: 'top bottom-=100',
+          end: 'top center',
+          scrub: 0.3, // Smoother scrub
+          onUpdate: (self) => {
+            // Parallax effect for the title
+            gsap.to(title, {
+              y: -30 * self.progress, // More pronounced movement
+              duration: 0.1,
+              ease: 'none'
+            });
+          }
+        });
+      }
+    }
+    
+    // Animate the "Load More" button
+    if (loadMoreRef.current) {
+      ScrollTrigger.create({
+        trigger: loadMoreRef.current,
+        start: 'top bottom-=50',
+        toggleActions: 'play none none none', // Only play when enters
+        onEnter: () => {
+          gsap.fromTo(
+            loadMoreRef.current,
+            { opacity: 0, y: 30 },
+            { opacity: 1, y: 0, duration: 0.6, ease: 'back.out(1.7)' }
+          );
+        }
+      });
+    }
     
     return () => {
       ScrollTrigger.getAll().forEach(trigger => trigger.kill());
     };
-  }, [stories, viewMode]);
+  }, [stories]);
   
   if (isLoadingIds) {
     return (
@@ -131,48 +228,29 @@ const NewsList = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Top Stories</h2>
-        <div className="flex space-x-2">
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('list')}
-            aria-label="List view"
-            className={viewMode === 'list' ? 'bg-hn-orange hover:bg-hn-orange/90' : ''}
-          >
-            <Grid3x3 className="w-4 h-4 mr-1" /> List
-          </Button>
-          <Button
-            variant={viewMode === 'bento' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('bento')}
-            aria-label="Bento view"
-            className={viewMode === 'bento' ? 'bg-hn-orange hover:bg-hn-orange/90' : ''}
-          >
-            <Grid2x2 className="w-4 h-4 mr-1" /> Bento
-          </Button>
-        </div>
-      </div>
-      
-      {viewMode === 'bento' ? (
-        <BentoGrid stories={stories} />
-      ) : (
-        <div ref={containerRef} className="stories-container">
+      {/* List View Section */}
+      <section 
+        ref={sectionRef} 
+        className="opacity-0" // Will be set to visible by GSAP
+      >
+        <h2 className="text-2xl font-bold mb-6 inline-block relative after:content-[''] after:absolute after:w-full after:h-1 after:bg-hn-orange/30 after:bottom-0 after:left-0">
+          All Stories
+        </h2>
+        <div ref={containerRef} className="stories-container space-y-6">
           {stories.map((story: Story, index: number) => (
             <StoryCard key={story.id} story={story} index={index} />
           ))}
         </div>
-      )}
+      </section>
       
-      <div ref={loadMoreRef} className="flex justify-center py-8">
+      <div ref={loadMoreRef} className="flex justify-center py-8 opacity-0"> {/* Set initially invisible */}
         {isLoadingStories ? (
           <Loader2 className="w-6 h-6 animate-spin text-hn-orange" />
         ) : (
           <Button 
             onClick={loadMore} 
             variant="outline"
-            className="border-hn-orange text-hn-orange hover:bg-hn-orange/10"
+            className="border-hn-orange text-hn-orange hover:bg-hn-orange/10 transform transition-all duration-300 hover:scale-105"
           >
             Load More Stories
           </Button>

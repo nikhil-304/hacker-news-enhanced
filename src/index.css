@@ -37,6 +37,8 @@
 
     --radius: 0.5rem;
 
+    /* Remove these sidebar CSS variables */
+    /* In :root {} section */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -45,6 +47,21 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* In .dark {} section */
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 24 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Also remove this class */
+    .sidebar-item a.active {
+      @apply bg-hn-orange text-white font-medium;
+    }
   }
 
   .dark {
@@ -105,7 +122,43 @@
   }
   
   .bento-card {
-    @apply relative transition-all duration-500 hover:scale-[1.03] hover:shadow-lg hover:z-10;
+    @apply relative transition-all duration-300 hover:shadow-lg hover:z-10;
+    transform-origin: center center;
+  }
+  
+  .bento-grid-container {
+    @apply relative z-10;
+  }
+  
+  /* Add gradient overlay effect for cards */
+  .bento-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(to top, var(--card), transparent);
+    opacity: 0.7;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  /* Ensure content is above the gradient */
+  .bento-card > a > div {
+    position: relative;
+    z-index: 2;
+  }
+  
+  /* Enhanced animations */
+  @keyframes pulseGlow {
+    0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.2); }
+    70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+  }
+  
+  .bento-card:hover {
+    animation: pulseGlow 2s infinite;
   }
   
   .bento-grid {

@@ -2,7 +2,6 @@
 import React, { useEffect } from 'react';
 import Header from '../components/Header';
 import NewsList from '../components/NewsList';
-import Sidebar from '../components/Sidebar';
 import Footer from '../components/Footer';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -53,25 +52,20 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
-      <main className="pt-24 lg:pl-56">
-        <Sidebar />
-        
+      <main className="pt-24">
         {/* Hero Section */}
-        <section className="hero-section py-10 md:py-16 px-4 sm:px-6 lg:px-8 mb-4 bg-gradient-to-b from-background to-secondary/30 overflow-hidden">
+        <section className="hero-section py-10 md:py-16 px-4 sm:px-6 lg:px-8 mb-2 bg-gradient-to-b from-background to-secondary/30 overflow-hidden">
           <div className="hero-content max-w-3xl mx-auto text-center">
             <h1 className="hero-title text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-              Discover the Best of Tech
+              Discover the <span className="text-hn-orange font-bold">Best</span> of <span className="text-hn-orange font-bold">Tech</span>
             </h1>
             <p className="hero-subtitle text-lg text-muted-foreground max-w-2xl mx-auto">
               Explore the top stories from the technology world, curated and voted on by the community.
             </p>
           </div>
         </section>
-        
         {/* News List */}
         <NewsList />
-        
         {/* Footer */}
         <Footer />
       </main>

@@ -32,7 +32,7 @@ const StoryCard = ({ story, index }: StoryCardProps) => {
       cardRef.current,
       { 
         opacity: 0,
-        y: 20 
+        y: 20,
       },
       { 
         opacity: 1,
