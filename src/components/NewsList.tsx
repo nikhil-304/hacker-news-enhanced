@@ -21,7 +21,11 @@ const fetchStory = async (id: number): Promise<Story> => {
   return response.data;
 };
 
-const NewsList = () => {
+interface NewsListProps {
+  search?: string;
+}
+
+const NewsList = ({ search = "" }: NewsListProps) => {
   const [page, setPage] = useState(1);
   const [stories, setStories] = useState<Story[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -128,9 +132,13 @@ const NewsList = () => {
           All Stories
         </h2>
         <div ref={containerRef} className="stories-container space-y-6">
-          {stories.map((story: Story, index: number) => (
-            <StoryCard key={story.id} story={story} index={index} />
-          ))}
+          {stories
+            .filter((story: Story) =>
+              story.title.toLowerCase().includes(search.toLowerCase())
+            )
+            .map((story: Story, index: number) => (
+              <StoryCard key={story.id} story={story} index={index} />
+            ))}
         </div>
       </section>
       <div ref={loadMoreRef} className="flex justify-center py-8 opacity-0">
