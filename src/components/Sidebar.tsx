@@ -1,0 +1,135 @@
+
+import React, { useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { Button } from '@/components/ui/button';
+
+gsap.registerPlugin(ScrollTrigger);
+
+const categories = [
+  { name: 'Top', url: '#', active: true },
+  { name: 'New', url: '#', active: false },
+  { name: 'Best', url: '#', active: false },
+  { name: 'Ask', url: '#', active: false },
+  { name: 'Show', url: '#', active: false },
+  { name: 'Jobs', url: '#', active: false },
+];
+
+const Sidebar = () => {
+  const sidebarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sidebar = sidebarRef.current;
+    if (!sidebar) return;
+
+    // Clear any existing animations
+    gsap.killTweensOf(".sidebar-item");
+    
+    // Initial animation for sidebar items with staggered effect
+    gsap.fromTo(
+      '.sidebar-item',
+      { 
+        opacity: 0, 
+        x: -20 
+      },
+      { 
+        opacity: 1, 
+        x: 0, 
+        duration: 0.5, 
+        stagger: 0.1,
+        ease: 'power3.out',
+        delay: 0.3
+      }
+    );
+
+    // Create scroll-based animations for sidebar
+    ScrollTrigger.create({
+      trigger: document.body,
+      start: 'top top',
+      end: 'bottom bottom',
+      onUpdate: (self) => {
+        // Subtle parallax effect for sidebar content
+        gsap.to(sidebar, {
+          y: self.progress * 15,
+          duration: 0.5,
+          ease: 'power1.out'
+        });
+
+        // Highlight effect for sidebar items based on scroll position
+        const items = document.querySelectorAll('.sidebar-item a');
+        const scrollProgress = self.progress;
+        
+        items.forEach((item, index) => {
+          // Determine if this item should be highlighted based on scroll position
+          const sectionSize = 1 / items.length;
+          const itemProgress = index * sectionSize;
+          const nextThreshold = (index + 1) * sectionSize;
+          let opacity = 0.7;
+          let scale = 1;
+          
+          // If scroll is in this section's range
+          if (scrollProgress >= itemProgress && scrollProgress < nextThreshold) {
+            opacity = 1;
+            scale = 1.05;
+          }
+          
+          // Apply the subtle animation
+          gsap.to(item, {
+            opacity: item.classList.contains('bg-hn-orange') ? 1 : opacity,
+            scale: item.classList.contains('bg-hn-orange') ? 1 : scale,
+            duration: 0.3
+          });
+        });
+      }
+    });
+
+    return () => {
+      // Clean up all animations and scroll triggers
+      gsap.killTweensOf(".sidebar-item");
+      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+    };
+  }, []);
+
+  return (
+    <aside 
+      ref={sidebarRef} 
+      className="hidden lg:block w-56 fixed top-0 left-0 h-screen pt-24 bg-background/95 backdrop-blur-sm border-r shadow-sm"
+    >
+      <div className="px-4 py-6">
+        <h2 className="text-lg font-medium mb-4">Categories</h2>
+        
+        <nav>
+          <ul className="space-y-1">
+            {categories.map((category, index) => (
+              <li key={index} className="sidebar-item">
+                <a 
+                  href={category.url}
+                  className={`block px-3 py-2 rounded-md text-sm transition-all duration-300 ${
+                    category.active 
+                      ? 'bg-hn-orange text-white shadow-md' 
+                      : 'hover:bg-hn-orange/10 hover:text-hn-orange'
+                  }`}
+                >
+                  {category.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        
+        <div className="mt-8 px-3">
+          <h3 className="text-sm font-medium text-foreground/80 mb-2">About</h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Hacker News is a social news website focusing on computer science and entrepreneurship.
+          </p>
+          
+          <Button variant="outline" className="w-full text-xs" size="sm">
+            Sign Up / Login
+          </Button>
+        </div>
+      </div>
+    </aside>
+  );
+};
+
+export default Sidebar;
